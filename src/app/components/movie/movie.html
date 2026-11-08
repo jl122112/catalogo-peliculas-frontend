@@ -1,0 +1,267 @@
+<div class="movie-detail-page">
+  <div class="background-overlay"></div>
+
+  <app-header></app-header>
+
+  <main class="main-content">
+    <div class="container">
+      <!-- Mensaje de éxito -->
+      <div *ngIf="successMessage" class="alert-success-custom">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <!-- Mensaje de error -->
+      <div *ngIf="errorMessage && !loading" class="alert-error-custom">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- Estado de carga -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando detalles de la película...</p>
+      </div>
+
+      <!-- Detalle de la película -->
+      <div *ngIf="!loading && movie" class="movie-detail-container">
+        <!-- Botón de regresar -->
+        <button class="btn-back" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i> Volver al Catálogo
+        </button>
+
+        <div class="movie-detail-content">
+          <!-- Portada -->
+          <div class="movie-poster-section">
+            <img [src]="movie.cover" [alt]="movie.title" class="movie-poster-large">
+          </div>
+
+          <!-- Información -->
+          <div class="movie-info-section">
+            <div class="movie-header">
+              <h1 class="movie-title-detail">{{ movie.title }}</h1>
+              <div class="movie-year-badge-large">
+                <i class="bi bi-calendar-event"></i> {{ movie.year }}
+              </div>
+            </div>
+
+            <div class="movie-synopsis-section">
+              <h3 class="section-label">
+                <i class="bi bi-text-paragraph"></i> Sinopsis
+              </h3>
+              <p class="movie-synopsis-detail">{{ movie.synopsis }}</p>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="action-buttons">
+              <button class="btn-edit" (click)="openEditModal()">
+                <i class="bi bi-pencil-square"></i> Editar
+              </button>
+              <button class="btn-delete" (click)="openDeleteModal()">
+                <i class="bi bi-trash"></i> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+
+  <!-- MODAL para editar película -->
+  <div 
+    class="modal-custom" 
+    [class.show]="showEditModal"
+    [style.display]="showEditModal ? 'block' : 'none'"
+    (click)="closeEditModal()"
+  >
+    <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom">
+          <h3 class="modal-title-custom">
+            <i class="bi bi-pencil-square"></i> Editar película
+          </h3>
+          <button type="button" class="btn-close-custom" (click)="closeEditModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body-custom">
+          <form (ngSubmit)="saveChanges()" #editForm="ngForm">
+            <!-- Título -->
+            <div class="form-group-custom">
+              <label for="edit-title" class="form-label-custom">
+                <i class="bi bi-card-heading"></i> Nombre de la película
+              </label>
+              <input 
+                type="text" 
+                id="edit-title" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['title']"
+                [(ngModel)]="editMovieData.title" 
+                name="title"
+                placeholder="Ejemplo: El padrino"
+                maxlength="255"
+              >
+              <div *ngIf="formErrors['title']" class="invalid-feedback-custom">
+                {{ formErrors['title'] }}
+              </div>
+            </div>
+
+            <!-- Año -->
+            <div class="form-group-custom">
+              <label for="edit-year" class="form-label-custom">
+                <i class="bi bi-calendar-event"></i> Año
+              </label>
+              <input 
+                type="number" 
+                id="edit-year" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['year']"
+                [(ngModel)]="editMovieData.year" 
+                name="year"
+                placeholder="Ejemplo: 2007"
+                min="1900"
+                [max]="2031"
+              >
+              <div *ngIf="formErrors['year']" class="invalid-feedback-custom">
+                {{ formErrors['year'] }}
+              </div>
+            </div>
+
+            <!-- URL de portada -->
+            <div class="form-group-custom">
+              <label for="edit-cover" class="form-label-custom">
+                <i class="bi bi-image"></i> URL de la portada
+              </label>
+              <input 
+                type="url" 
+                id="edit-cover" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['cover']"
+                [(ngModel)]="editMovieData.cover" 
+                name="cover"
+                placeholder="https://pagina.com/imagen.jpg"
+              >
+              <div *ngIf="formErrors['cover']" class="invalid-feedback-custom">
+                {{ formErrors['cover'] }}
+              </div>
+              <div *ngIf="editMovieData.cover && !formErrors['cover']" class="cover-preview">
+                <img [src]="editMovieData.cover" alt="Vista previa" class="preview-image">
+              </div>
+            </div>
+
+            <!-- Sinopsis -->
+            <div class="form-group-custom">
+              <label for="edit-synopsis" class="form-label-custom">
+                <i class="bi bi-text-paragraph"></i> Sinopsis
+              </label>
+              <textarea 
+                id="edit-synopsis" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['synopsis']"
+                [(ngModel)]="editMovieData.synopsis" 
+                name="synopsis"
+                placeholder="Escribe una  descripción de la película..."
+                rows="4"
+              ></textarea>
+              <div *ngIf="formErrors['synopsis']" class="invalid-feedback-custom">
+                {{ formErrors['synopsis'] }}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer-custom">
+          <button 
+            type="button" 
+            class="btn-cancel-custom" 
+            (click)="closeEditModal()"
+            [disabled]="saving"
+          >
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn-save-custom" 
+            (click)="saveChanges()"
+            [disabled]="saving"
+          >
+            <span *ngIf="!saving">
+              <i class="bi bi-check-circle"></i> Guardar cambios
+            </span>
+            <span *ngIf="saving">
+              <span class="spinner-small"></span> Guardando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL para confirmar eliminación -->
+  <div 
+    class="modal-custom" 
+    [class.show]="showDeleteModal"
+    [style.display]="showDeleteModal ? 'block' : 'none'"
+    (click)="closeDeleteModal()"
+  >
+    <div class="modal-dialog-custom modal-dialog-small" (click)="$event.stopPropagation()">
+      <div class="modal-content-custom">
+        <div class="modal-header-custom modal-header-danger">
+          <h3 class="modal-title-custom">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar eliminación
+          </h3>
+          <button type="button" class="btn-close-custom" (click)="closeDeleteModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body-custom">
+          <div class="delete-warning">
+            <i class="bi bi-trash-fill"></i>
+            <p class="warning-text">
+              ¿Estás seguro de que deseas eliminar la película
+              <strong>"{{ movie?.title }}"</strong>?
+            </p>
+            <p class="warning-subtext">
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+        </div>
+
+        <div class="modal-footer-custom">
+          <button 
+            type="button" 
+            class="btn-cancel-custom" 
+            (click)="closeDeleteModal()"
+            [disabled]="deleting"
+          >
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn-delete-confirm" 
+            (click)="confirmDelete()"
+            [disabled]="deleting"
+          >
+            <span *ngIf="!deleting">
+              <i class="bi bi-trash"></i> Sí, eliminar
+            </span>
+            <span *ngIf="deleting">
+              <span class="spinner-small"></span> Eliminando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backdrop del modal -->
+  <div 
+    class="modal-backdrop-custom" 
+    [class.show]="showEditModal || showDeleteModal"
+    [style.display]="(showEditModal || showDeleteModal) ? 'block' : 'none'"
+  ></div>
+</div>

@@ -1,0 +1,144 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid #d4af37;
+  padding: 15px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  cursor: pointer;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.5));
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.1);
+}
+
+.site-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #d4af37;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 2px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 30px;
+}
+
+.nav-link {
+  color: #f0f0f0;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link:hover {
+  color: #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.nav-link.active {
+  color: #000;
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Tablet */
+@media (max-width: 992px) {
+  .site-title {
+    font-size: 1.7rem;
+  }
+  
+  .main-nav {
+    gap: 15px;
+  }
+  
+  .nav-link {
+    font-size: 1rem;
+    padding: 6px 15px;
+  }
+}
+
+/* Móvil */
+@media (max-width: 768px) {
+  .header .container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .site-title {
+    font-size: 1.4rem;
+    text-align: center;
+  }
+  
+  .logo {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .logo-container {
+    gap: 12px;
+  }
+  
+  .main-nav {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .nav-link {
+    font-size: 0.95rem;
+    padding: 6px 14px;
+  }
+}
+
+/* Móvil pequeño */
+@media (max-width: 480px) {
+  .header {
+    padding: 10px 0;
+  }
+  
+  .site-title {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+  
+  .logo {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .nav-link {
+    font-size: 0.85rem;
+    padding: 5px 12px;
+  }
+}

@@ -1,0 +1,222 @@
+<div class="movies-page">
+  <div class="background-overlay"></div>
+
+  <app-header></app-header>
+
+  <main class="main-content">
+    <div class="container">
+      <!-- Encabezado de sección con botón -->
+      <div class="section-header">
+        <div class="section-header-content">
+          <div>
+            <h2 class="section-title">
+              <i class="bi bi-film"></i> Catálogo
+            </h2>
+            <p class="section-subtitle">
+              Explora la colección de películas y descubre tu próxima favorita
+            </p>
+          </div>
+          <button class="btn-add-movie" (click)="openAddModal()">
+            <i class="bi bi-plus-circle"></i> Agregar película
+          </button>
+        </div>
+      </div>
+
+      <!-- Mensaje de éxito -->
+      <div *ngIf="successMessage" class="alert-success-custom">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <!-- Mensaje de error general -->
+      <div *ngIf="errorMessage && !showAddModal" class="alert-error-custom">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- Estado de carga -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Cargando películas...</p>
+      </div>
+
+      <!-- Grid de películas -->
+      <div *ngIf="!loading && movies.length > 0" class="movies-grid">
+        <a 
+          *ngFor="let movie of movies" 
+          [routerLink]="['/movies', movie.id]" 
+          class="movie-card"
+        >
+          <div class="movie-poster">
+            <img [src]="movie.cover" [alt]="movie.title" class="poster-image">
+            <div class="poster-overlay">
+              <span class="view-details">
+                <i class="bi bi-eye"></i> Ver detalles
+              </span>
+            </div>
+            <div class="movie-year-badge">
+              {{ movie.year }}
+            </div>
+          </div>
+          <div class="movie-info">
+            <h3 class="movie-title">{{ movie.title }}</h3>
+            <p class="movie-synopsis">{{ movie.synopsis }}</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Sin películas -->
+      <div *ngIf="!loading && movies.length === 0" class="no-movies">
+        <i class="bi bi-film"></i>
+        <p>No hay películas disponibles. ¡Agrega la primera!</p>
+        <button class="btn-add-movie" (click)="openAddModal()">
+          <i class="bi bi-plus-circle"></i> Agregar película
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+
+  <!-- VENTANA EMERGENTE para agregar película -->
+  <div 
+    class="modal-custom" 
+    [class.show]="showAddModal"
+    [style.display]="showAddModal ? 'block' : 'none'"
+    (click)="closeAddModal()"
+  >
+    <div class="modal-dialog-custom" (click)="$event.stopPropagation()">
+      <div class="modal-content-custom">
+        <!-- Header del modal -->
+        <div class="modal-header-custom">
+          <h3 class="modal-title-custom">
+            <i class="bi bi-plus-circle"></i> Agregar nueva película
+          </h3>
+          <button type="button" class="btn-close-custom" (click)="closeAddModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- Body de la ventana emergente -->
+        <div class="modal-body-custom">
+          <form (ngSubmit)="saveMovie()" #movieForm="ngForm">
+            <!-- Título -->
+            <div class="form-group-custom">
+              <label for="title" class="form-label-custom">
+                <i class="bi bi-card-heading"></i> Nombre de la película
+              </label>
+              <input 
+                type="text" 
+                id="title" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['title']"
+                [(ngModel)]="newMovie.title" 
+                name="title"
+                placeholder="Ejemplo: El padrino"
+                maxlength="255"
+              >
+              <div *ngIf="formErrors['title']" class="invalid-feedback-custom">
+                {{ formErrors['title'] }}
+              </div>
+            </div>
+
+            <!-- Año -->
+            <div class="form-group-custom">
+              <label for="year" class="form-label-custom">
+                <i class="bi bi-calendar-event"></i> Año
+              </label>
+              <input 
+                type="number" 
+                id="year" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['year']"
+                [(ngModel)]="newMovie.year" 
+                name="year"
+                placeholder="Ejemplo: 2007"
+                min="1900"
+                [max]="2031"
+              >
+              <div *ngIf="formErrors['year']" class="invalid-feedback-custom">
+                {{ formErrors['year'] }}
+              </div>
+            </div>
+
+            <!-- URL de portada -->
+            <div class="form-group-custom">
+              <label for="cover" class="form-label-custom">
+                <i class="bi bi-image"></i> URL de la portada
+              </label>
+              <input 
+                type="url" 
+                id="cover" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['cover']"
+                [(ngModel)]="newMovie.cover" 
+                name="cover"
+                placeholder="https://pagina.com/imagen.jpg"
+              >
+              <div *ngIf="formErrors['cover']" class="invalid-feedback-custom">
+                {{ formErrors['cover'] }}
+              </div>
+              <!-- Vista previa de la imagen -->
+              <div *ngIf="newMovie.cover && !formErrors['cover']" class="cover-preview">
+                <img [src]="newMovie.cover" alt="Vista previa" class="preview-image">
+              </div>
+            </div>
+
+            <!-- Sinopsis -->
+            <div class="form-group-custom">
+              <label for="synopsis" class="form-label-custom">
+                <i class="bi bi-text-paragraph"></i> Sinopsis
+              </label>
+              <textarea 
+                id="synopsis" 
+                class="form-control-custom" 
+                [class.is-invalid]="formErrors['synopsis']"
+                [(ngModel)]="newMovie.synopsis" 
+                name="synopsis"
+                placeholder="Escribe una  descripción de la película..."
+                rows="4"
+              ></textarea>
+              <div *ngIf="formErrors['synopsis']" class="invalid-feedback-custom">
+                {{ formErrors['synopsis'] }}
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer del la vetana emergente -->
+        <div class="modal-footer-custom">
+          <button 
+            type="button" 
+            class="btn-cancel-custom" 
+            (click)="closeAddModal()"
+            [disabled]="saving"
+          >
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn-save-custom" 
+            (click)="saveMovie()"
+            [disabled]="saving"
+          >
+            <span *ngIf="!saving">
+              <i class="bi bi-check-circle"></i> Guardar
+            </span>
+            <span *ngIf="saving">
+              <span class="spinner-small"></span> Guardando...
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Backdrop del la vetana emergente -->
+  <div 
+    class="modal-backdrop-custom" 
+    [class.show]="showAddModal"
+    [style.display]="showAddModal ? 'block' : 'none'"
+  ></div>
+</div>

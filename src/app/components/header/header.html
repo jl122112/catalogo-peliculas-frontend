@@ -1,0 +1,16 @@
+<header class="header">
+  <div class="container">
+    <div class="logo-container">
+      <img src="img/logo.png" alt="Logo" class="logo" routerLink="/">
+      <h1 class="site-title" routerLink="/">CineVerse</h1>
+    </div>
+    <nav class="main-nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+        <i class="bi bi-house-door"></i> Inicio
+      </a>
+      <a routerLink="/movies" routerLinkActive="active" class="nav-link">
+        <i class="bi bi-film"></i> Catálogo
+      </a>
+    </nav>
+  </div>
+</header>
