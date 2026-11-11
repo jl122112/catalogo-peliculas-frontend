@@ -1,0 +1,189 @@
+.cover-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Selector de modo */
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 10px;
+}
+
+.mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #bbb;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.mode-btn:hover { color: #d4af37; }
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
+  color: #000;
+  box-shadow: 0 3px 12px rgba(212, 175, 55, 0.35);
+}
+
+/* Campo URL */
+.url-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.url-row:focus-within {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
+.url-icon { color: #d4af37; font-size: 1.2rem; }
+
+.url-input {
+  flex: 1;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #f0f0f0;
+  font-size: 1rem;
+}
+
+.url-input::placeholder { color: #888; }
+
+.clear-btn {
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: inline-flex;
+  transition: all 0.25s ease;
+}
+
+.clear-btn:hover { color: #ff6b6b; background: rgba(255, 107, 107, 0.12); }
+
+/* Dropzone */
+.dropzone {
+  padding: 30px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px dashed rgba(212, 175, 55, 0.4);
+  border-radius: 12px;
+  background: rgba(212, 175, 55, 0.03);
+  transition: all 0.3s ease;
+}
+
+.dropzone:hover,
+.dropzone.drag-over,
+.dropzone:focus-visible {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.08);
+  box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.12);
+  outline: none;
+}
+
+.drop-icon { font-size: 2.4rem; color: #d4af37; display: block; margin-bottom: 10px; }
+.drop-title { color: #f0f0f0; margin: 0 0 6px; font-size: 0.95rem; }
+.drop-title span { color: #d4af37; font-weight: 700; text-decoration: underline; }
+.drop-hint { color: #999; margin: 0; font-size: 0.8rem; }
+
+/* Chip de archivo */
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 10px;
+}
+
+.file-icon { font-size: 1.6rem; color: #d4af37; }
+.file-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.file-name { color: #f0f0f0; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-size { color: #999; font-size: 0.78rem; }
+
+/* Error */
+.cover-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+/* Vista previa */
+.preview { display: flex; justify-content: center; }
+
+.preview-frame {
+  position: relative;
+  width: 150px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.preview-frame img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.preview-fallback {
+  aspect-ratio: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #999;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.preview-fallback i { font-size: 1.8rem; color: #d4af37; }
+
+.preview-tag {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #d4af37;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+  .mode-btn { font-size: 0.8rem; padding: 8px; }
+  .dropzone { padding: 22px 12px; }
+}

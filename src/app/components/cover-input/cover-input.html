@@ -1,0 +1,88 @@
+<div class="cover-input">
+  <!-- Selector de modo -->
+  <div class="mode-switch" role="tablist" aria-label="Modo de portada">
+    <button type="button" class="mode-btn" [class.active]="mode === 'url'" (click)="setMode('url')">
+      <i class="bi bi-link-45deg"></i> Pegar enlace
+    </button>
+    <button type="button" class="mode-btn" [class.active]="mode === 'file'" (click)="setMode('file')">
+      <i class="bi bi-cloud-arrow-up"></i> Subir archivo
+    </button>
+  </div>
+
+  <!-- Modo URL -->
+  <div *ngIf="mode === 'url'" class="mode-panel">
+    <div class="url-row">
+      <i class="bi bi-link-45deg url-icon"></i>
+      <input
+        [id]="inputId"
+        type="url"
+        class="url-input"
+        [ngModel]="url"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="onUrlChange($event)"
+        placeholder="https://ejemplo.com/portada.jpg"
+        autocomplete="off"
+      >
+      <button *ngIf="url" type="button" class="clear-btn" (click)="clearUrl()" title="Limpiar enlace">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modo Archivo -->
+  <div *ngIf="mode === 'file'" class="mode-panel">
+    <div
+      *ngIf="!file"
+      class="dropzone"
+      [class.drag-over]="dragOver"
+      role="button"
+      tabindex="0"
+      (click)="fileInput.click()"
+      (keydown.enter)="fileInput.click()"
+      (keydown.space)="fileInput.click(); $event.preventDefault()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <i class="bi bi-cloud-arrow-up drop-icon"></i>
+      <p class="drop-title">Arrastra tu portada aquí o <span>explora tus archivos</span></p>
+      <p class="drop-hint">JPG, PNG, WebP o GIF · máx. 2 MB</p>
+    </div>
+
+    <div *ngIf="file" class="file-chip">
+      <i class="bi bi-file-earmark-image file-icon"></i>
+      <div class="file-meta">
+        <span class="file-name">{{ file.name }}</span>
+        <span class="file-size">{{ formatSize(file.size) }} · lista para subir</span>
+      </div>
+      <button type="button" class="clear-btn" (click)="removeFile()" title="Quitar archivo">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+
+    <input #fileInput type="file" [accept]="accept" hidden (change)="onFileSelected($event)">
+  </div>
+
+  <!-- Error -->
+  <p *ngIf="error" class="cover-error">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </p>
+
+  <!-- Vista previa -->
+  <div *ngIf="preview && !error" class="preview">
+    <div class="preview-frame">
+      <img
+        *ngIf="!previewBroken"
+        [src]="preview"
+        alt="Vista previa de la portada"
+        (error)="previewBroken = true"
+        (load)="previewBroken = false"
+      >
+      <div *ngIf="previewBroken" class="preview-fallback">
+        <i class="bi bi-image-alt"></i>
+        <span>No se pudo cargar la imagen</span>
+      </div>
+      <span class="preview-tag"><i class="bi bi-eye"></i> Vista previa</span>
+    </div>
+  </div>
+</div>

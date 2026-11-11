@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { FooterComponent } from '../footer/footer';
-import { MovieService } from '../../services/movie';
+import { CoverInputComponent, CoverSelection } from '../cover-input/cover-input';
+import { MovieService, MoviePayload } from '../../services/movie';
 import { Movie } from '../../models/movie.model';
 
 @Component({
   selector: 'app-movies',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent, CoverInputComponent],
   templateUrl: './movies.html',
   styleUrl: './movies.css'
 })
@@ -19,20 +20,17 @@ export class MoviesComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   movies: Movie[] = [];
-  loading: boolean = true;
-  errorMessage: string = '';
-  successMessage: string = '';
+  loading = true;
+  errorMessage = '';
+  successMessage = '';
 
-  // Propiedades para  de nueva película
-  showAddModal: boolean = false;
-  newMovie = {
-    title: '',
-    synopsis: '',
-    cover: '',
-    year: new Date().getFullYear()
-  };
-  saving: boolean = false;
+  showAddModal = false;
+  newMovie = { title: '', synopsis: '', year: new Date().getFullYear() };
+  coverSelection: CoverSelection = { mode: 'url', url: '', file: null };
+  saving = false;
+  saveError = '';
   formErrors: { [key: string]: string } = {};
+  readonly maxYear = new Date().getFullYear() + 5;
 
   ngOnInit(): void {
     this.loadMovies();
@@ -40,6 +38,7 @@ export class MoviesComponent implements OnInit {
 
   loadMovies(): void {
     this.loading = true;
+    this.errorMessage = '';
     this.movieService.getAllMovies().subscribe({
       next: (data: Movie[]) => {
         this.movies = data;
@@ -55,33 +54,31 @@ export class MoviesComponent implements OnInit {
     });
   }
 
-  // Abrir ventana emergente
+  onCoverChange(selection: CoverSelection): void {
+    this.coverSelection = selection;
+    delete this.formErrors['cover'];
+  }
+
   openAddModal(): void {
     this.resetForm();
     this.showAddModal = true;
     document.body.classList.add('modal-open');
   }
 
-  // Cerrar ventana emergente
   closeAddModal(): void {
     this.showAddModal = false;
     document.body.classList.remove('modal-open');
     this.resetForm();
   }
 
-  // Resetear formulario
   resetForm(): void {
-    this.newMovie = {
-      title: '',
-      synopsis: '',
-      cover: '',
-      year: new Date().getFullYear()
-    };
+    this.newMovie = { title: '', synopsis: '', year: new Date().getFullYear() };
+    this.coverSelection = { mode: 'url', url: '', file: null };
     this.formErrors = {};
+    this.saveError = '';
     this.saving = false;
   }
 
-  // Validar formulario
   validateForm(): boolean {
     this.formErrors = {};
 
@@ -95,49 +92,66 @@ export class MoviesComponent implements OnInit {
       this.formErrors['synopsis'] = 'La sinopsis es obligatoria';
     }
 
-    if (!this.newMovie.cover.trim()) {
-      this.formErrors['cover'] = 'La URL de la portada es obligatoria';
+    if (this.coverSelection.mode === 'file') {
+      if (!this.coverSelection.file) {
+        this.formErrors['cover'] = 'Selecciona una imagen o cambia a "Pegar enlace".';
+      }
     } else {
-      try {
-        new URL(this.newMovie.cover);
-      } catch {
-        this.formErrors['cover'] = 'Debe ser una URL válida (ej: https://...)';
+      const url = this.coverSelection.url.trim();
+      if (!url) {
+        this.formErrors['cover'] = 'Pega la URL de la portada o sube un archivo.';
+      } else {
+        try {
+          const parsed = new URL(url);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error();
+        } catch {
+          this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
+        }
       }
     }
 
-    const currentYear = new Date().getFullYear();
-    if (!this.newMovie.year || this.newMovie.year < 1900 || this.newMovie.year > currentYear + 5) {
-      this.formErrors['year'] = `El año debe estar entre 1900 y ${currentYear + 5}`;
+    const year = Number(this.newMovie.year);
+    if (!year || year < 1900 || year > this.maxYear) {
+      this.formErrors['year'] = `El año debe estar entre 1900 y ${this.maxYear}`;
     }
 
     return Object.keys(this.formErrors).length === 0;
   }
 
-  // Guardar nueva película
   saveMovie(): void {
     if (!this.validateForm()) {
+      this.cdr.detectChanges();
       return;
     }
 
     this.saving = true;
-    this.movieService.createMovie(this.newMovie).subscribe({
-      next: (movie: Movie) => {
+    this.saveError = '';
+
+    const payload: MoviePayload = {
+      title: this.newMovie.title.trim(),
+      synopsis: this.newMovie.synopsis.trim(),
+      year: Number(this.newMovie.year),
+      cover: this.coverSelection.mode === 'url' ? this.coverSelection.url.trim() : undefined,
+      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null
+    };
+
+    this.movieService.createMovie(payload).subscribe({
+      next: () => {
         this.saving = false;
         this.successMessage = '¡Película guardada correctamente!';
         this.closeAddModal();
-        this.loadMovies(); // Recargar lista
-        
-        // Ocultar mensaje de éxito después de 3 segundos
+        this.loadMovies();
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();
         }, 3000);
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         this.saving = false;
-        this.errorMessage = 'Error al guardar la película. Intenta nuevamente.';
-        console.error('Error:', err);
+        this.saveError = err?.error?.message || 'Error al guardar la película. Intenta nuevamente.';
         this.cdr.detectChanges();
+        console.error('Error:', err);
       }
     });
   }

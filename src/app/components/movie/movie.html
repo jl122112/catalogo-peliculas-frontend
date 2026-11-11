@@ -88,6 +88,13 @@
         </div>
 
         <div class="modal-body-custom">
+
+            <div *ngIf="saveError" class="alert-error-custom" style="margin-bottom: 15px;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <span>{{ saveError }}</span>
+            </div>
+
+
           <form (ngSubmit)="saveChanges()" #editForm="ngForm">
             <!-- Título -->
             <div class="form-group-custom">
@@ -131,26 +138,21 @@
             </div>
 
             <!-- URL de portada -->
-            <div class="form-group-custom">
-              <label for="edit-cover" class="form-label-custom">
-                <i class="bi bi-image"></i> URL de la portada
-              </label>
-              <input 
-                type="url" 
-                id="edit-cover" 
-                class="form-control-custom" 
-                [class.is-invalid]="formErrors['cover']"
-                [(ngModel)]="editMovieData.cover" 
-                name="cover"
-                placeholder="https://pagina.com/imagen.jpg"
-              >
-              <div *ngIf="formErrors['cover']" class="invalid-feedback-custom">
-                {{ formErrors['cover'] }}
-              </div>
-              <div *ngIf="editMovieData.cover && !formErrors['cover']" class="cover-preview">
-                <img [src]="editMovieData.cover" alt="Vista previa" class="preview-image">
-              </div>
-            </div>
+            <!-- Portada: enlace o archivo -->
+                <div class="form-group-custom">
+                  <label class="form-label-custom">
+                    <i class="bi bi-image"></i> Portada de la Película
+                  </label>
+                  <app-cover-input
+                    *ngIf="showEditModal"
+                    inputId="edit-cover"
+                    [initialUrl]="editMovieData.cover"
+                    (selectionChange)="onCoverChange($event)">
+                  </app-cover-input>
+                  <div *ngIf="formErrors['cover']" class="invalid-feedback-custom">
+                    {{ formErrors['cover'] }}
+                  </div>
+                </div>
 
             <!-- Sinopsis -->
             <div class="form-group-custom">

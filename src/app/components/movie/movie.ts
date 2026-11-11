@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { FooterComponent } from '../footer/footer';
-import { MovieService } from '../../services/movie';
+import { CoverInputComponent, CoverSelection } from '../cover-input/cover-input';
+import { MovieService, MoviePayload } from '../../services/movie';
 import { Movie } from '../../models/movie.model';
 
 @Component({
   selector: 'app-movie',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent, CoverInputComponent],
   templateUrl: './movie.html',
   styleUrl: './movie.css'
 })
@@ -21,24 +22,20 @@ export class MovieComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   movie: Movie | null = null;
-  loading: boolean = true;
-  errorMessage: string = '';
-  successMessage: string = '';
+  loading = true;
+  errorMessage = '';
+  successMessage = '';
 
-  // Propiedades para el modal de edición
-  showEditModal: boolean = false;
-  editMovieData = {
-    title: '',
-    synopsis: '',
-    cover: '',
-    year: 0
-  };
-  saving: boolean = false;
+  showEditModal = false;
+  editMovieData = { title: '', synopsis: '', cover: '', year: 0 };
+  coverSelection: CoverSelection = { mode: 'url', url: '', file: null };
+  saving = false;
+  saveError = '';
   formErrors: { [key: string]: string } = {};
+  readonly maxYear = new Date().getFullYear() + 5;
 
-  // Propiedades para el modal de eliminación
-  showDeleteModal: boolean = false;
-  deleting: boolean = false;
+  showDeleteModal = false;
+  deleting = false;
 
   ngOnInit(): void {
     this.loadMovie();
@@ -54,9 +51,7 @@ export class MovieComponent implements OnInit {
       return;
     }
 
-    const id = Number(idParam);
-
-    this.movieService.getMovieById(id).subscribe({
+    this.movieService.getMovieById(Number(idParam)).subscribe({
       next: (data: Movie) => {
         this.movie = data;
         this.loading = false;
@@ -71,30 +66,34 @@ export class MovieComponent implements OnInit {
     });
   }
 
-  // Abrir modal de edición
+  onCoverChange(selection: CoverSelection): void {
+    this.coverSelection = selection;
+    delete this.formErrors['cover'];
+  }
+
   openEditModal(): void {
     if (!this.movie) return;
-
     this.editMovieData = {
       title: this.movie.title,
       synopsis: this.movie.synopsis,
       cover: this.movie.cover,
       year: this.movie.year
     };
+    this.coverSelection = { mode: 'url', url: this.movie.cover, file: null };
     this.formErrors = {};
+    this.saveError = '';
     this.showEditModal = true;
     document.body.classList.add('modal-open');
   }
 
-  // Cerrar modal de edición
   closeEditModal(): void {
     this.showEditModal = false;
     document.body.classList.remove('modal-open');
     this.formErrors = {};
+    this.saveError = '';
     this.saving = false;
   }
 
-  // Validar formulario de edición
   validateForm(): boolean {
     this.formErrors = {};
 
@@ -108,37 +107,56 @@ export class MovieComponent implements OnInit {
       this.formErrors['synopsis'] = 'La sinopsis es obligatoria';
     }
 
-    if (!this.editMovieData.cover.trim()) {
-      this.formErrors['cover'] = 'La URL de la portada es obligatoria';
+    if (this.coverSelection.mode === 'file') {
+      if (!this.coverSelection.file) {
+        this.formErrors['cover'] = 'Selecciona una imagen o cambia a "Pegar enlace".';
+      }
     } else {
-      try {
-        new URL(this.editMovieData.cover);
-      } catch {
-        this.formErrors['cover'] = 'Debe ser una URL válida (ej: https://...)';
+      const url = this.coverSelection.url.trim();
+      if (!url) {
+        this.formErrors['cover'] = 'Pega la URL de la portada o sube un archivo.';
+      } else {
+        try {
+          const parsed = new URL(url);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error();
+        } catch {
+          this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
+        }
       }
     }
 
-    const currentYear = new Date().getFullYear();
-    if (!this.editMovieData.year || this.editMovieData.year < 1900 || this.editMovieData.year > currentYear + 5) {
-      this.formErrors['year'] = `El año debe estar entre 1900 y ${currentYear + 5}`;
+    const year = Number(this.editMovieData.year);
+    if (!year || year < 1900 || year > this.maxYear) {
+      this.formErrors['year'] = `El año debe estar entre 1900 y ${this.maxYear}`;
     }
 
     return Object.keys(this.formErrors).length === 0;
   }
 
-  // Guardar cambios
   saveChanges(): void {
-    if (!this.validateForm() || !this.movie) return;
+    if (!this.validateForm() || !this.movie) {
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.saving = true;
-    this.movieService.updateMovie(this.movie.id, this.editMovieData).subscribe({
+    this.saveError = '';
+
+    const payload: MoviePayload = {
+      title: this.editMovieData.title.trim(),
+      synopsis: this.editMovieData.synopsis.trim(),
+      year: Number(this.editMovieData.year),
+      cover: this.coverSelection.mode === 'url' ? this.coverSelection.url.trim() : undefined,
+      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null
+    };
+
+    this.movieService.updateMovie(this.movie.id, payload).subscribe({
       next: (updatedMovie: Movie) => {
         this.saving = false;
         this.movie = updatedMovie;
         this.successMessage = '¡Película actualizada correctamente!';
         this.closeEditModal();
         this.cdr.detectChanges();
-
         setTimeout(() => {
           this.successMessage = '';
           this.cdr.detectChanges();
@@ -146,30 +164,26 @@ export class MovieComponent implements OnInit {
       },
       error: (err: any) => {
         this.saving = false;
-        this.errorMessage = 'Error al actualizar la película. Intenta nuevamente.';
+        this.saveError = err?.error?.message || 'Error al actualizar la película. Intenta nuevamente.';
         this.cdr.detectChanges();
         console.error('Error:', err);
       }
     });
   }
 
-  // Abrir modal de eliminación
   openDeleteModal(): void {
     this.showDeleteModal = true;
     document.body.classList.add('modal-open');
   }
 
-  // Cerrar modal de eliminación
   closeDeleteModal(): void {
     this.showDeleteModal = false;
     document.body.classList.remove('modal-open');
     this.deleting = false;
   }
 
-  // Eliminar película
   confirmDelete(): void {
     if (!this.movie) return;
-
     this.deleting = true;
     this.movieService.deleteMovie(this.movie.id).subscribe({
       next: () => {
@@ -177,10 +191,7 @@ export class MovieComponent implements OnInit {
         this.successMessage = '¡Película eliminada correctamente!';
         this.closeDeleteModal();
         this.cdr.detectChanges();
-
-        setTimeout(() => {
-          this.router.navigate(['/movies']);
-        }, 1500);
+        setTimeout(() => this.router.navigate(['/movies']), 1500);
       },
       error: (err: any) => {
         this.deleting = false;
@@ -191,7 +202,6 @@ export class MovieComponent implements OnInit {
     });
   }
 
-  // Regresar al catálogo
   goBack(): void {
     this.router.navigate(['/movies']);
   }
