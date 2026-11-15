@@ -239,6 +239,20 @@ export class MovieComponent implements OnInit {
     });
   }
 
+  /**
+   * Si la miniatura en alta resolución (maxresdefault) no existe,
+   * cae a la de resolución estándar (hqdefault).
+   */
+  onTrailerThumbError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img && this.movie?.trailer_key) {
+      img.src = `https://img.youtube.com/vi/${this.movie.trailer_key}/hqdefault.jpg`;
+      // Evita un bucle infinito si también falla hqdefault
+      img.onerror = null;
+    }
+  }
+
+
   goBack(): void {
     this.router.navigate(['/movies']);
   }

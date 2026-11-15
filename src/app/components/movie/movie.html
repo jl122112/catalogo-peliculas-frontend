@@ -52,15 +52,62 @@
               <p class="movie-synopsis-detail">{{ movie.synopsis }}</p>
             </div>
 
-            <!-- Botones de acción -->
-            <div class="action-buttons">
-              <button class="btn-edit" (click)="openEditModal()">
-                <i class="bi bi-pencil-square"></i> Editar
-              </button>
-              <button class="btn-delete" (click)="openDeleteModal()">
-                <i class="bi bi-trash"></i> Eliminar
-              </button>
-            </div>
+            <!-- Tráiler de la película -->
+                  <div *ngIf="movie?.trailer_key" class="movie-trailer-section">
+                    <h3 class="section-label">
+                      <i class="bi bi-camera-reels"></i> Tráiler
+                    </h3>
+
+                    <div class="trailer-card">
+                      <a
+                        [href]="movie!.trailer_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="trailer-thumb"
+                        [attr.aria-label]="'Ver tráiler de ' + movie!.title + ' en YouTube'">
+
+                        <img
+                          [src]="'https://img.youtube.com/vi/' + movie!.trailer_key + '/maxresdefault.jpg'"
+                          [alt]="'Miniatura del tráiler de ' + movie!.title"
+                          (error)="onTrailerThumbError($event)">
+
+                        <span class="trailer-overlay" aria-hidden="true">
+                          <span class="trailer-play">
+                            <i class="bi bi-play-fill"></i>
+                          </span>
+                          <span class="trailer-badge">
+                            <i class="bi bi-youtube"></i> YouTube
+                          </span>
+                        </span>
+                      </a>
+
+                      <div class="trailer-actions">
+                        
+
+                        
+                        <a
+                          class="btn-ghost btn-ghost-small"
+                          [href]="movie!.trailer_url"
+                          target="_blank"
+                          rel="noopener noreferrer">
+                          <i class="bi bi-youtube"></i> Abrir en YouTube
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                    <!-- Botones de acción -->
+                    <div class="action-buttons">
+                      <button class="btn-edit" (click)="openEditModal()">
+                        <i class="bi bi-pencil-square"></i> Editar
+                      </button>
+                      <button class="btn-delete" (click)="openDeleteModal()">
+                        <i class="bi bi-trash"></i> Eliminar
+                      </button>
+                    </div>
+
+
+
           </div>
         </div>
       </div>
