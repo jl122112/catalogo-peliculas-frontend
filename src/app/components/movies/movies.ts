@@ -5,13 +5,22 @@ import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { FooterComponent } from '../footer/footer';
 import { CoverInputComponent, CoverSelection } from '../cover-input/cover-input';
+import { ReelFieldsComponent, ReelSelection } from '../reel-fields/reel-fields';
 import { MovieService, MoviePayload } from '../../services/movie';
 import { Movie } from '../../models/movie.model';
 
 @Component({
   selector: 'app-movies',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent, CoverInputComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    HeaderComponent,
+    FooterComponent,
+    CoverInputComponent,
+    ReelFieldsComponent
+  ],
   templateUrl: './movies.html',
   styleUrl: './movies.css'
 })
@@ -27,6 +36,14 @@ export class MoviesComponent implements OnInit {
   showAddModal = false;
   newMovie = { title: '', synopsis: '', year: new Date().getFullYear() };
   coverSelection: CoverSelection = { mode: 'url', url: '', file: null };
+  reelSelection: ReelSelection = {
+    trailer_key: null,
+    backdrop_url: null,
+    is_featured: false,
+    featured_order: null,
+    valid: true
+  };
+
   saving = false;
   saveError = '';
   formErrors: { [key: string]: string } = {};
@@ -59,6 +76,11 @@ export class MoviesComponent implements OnInit {
     delete this.formErrors['cover'];
   }
 
+  onReelChange(selection: ReelSelection): void {
+    this.reelSelection = selection;
+    delete this.formErrors['reel'];
+  }
+
   openAddModal(): void {
     this.resetForm();
     this.showAddModal = true;
@@ -74,6 +96,13 @@ export class MoviesComponent implements OnInit {
   resetForm(): void {
     this.newMovie = { title: '', synopsis: '', year: new Date().getFullYear() };
     this.coverSelection = { mode: 'url', url: '', file: null };
+    this.reelSelection = {
+      trailer_key: null,
+      backdrop_url: null,
+      is_featured: false,
+      featured_order: null,
+      valid: true
+    };
     this.formErrors = {};
     this.saveError = '';
     this.saving = false;
@@ -100,19 +129,18 @@ export class MoviesComponent implements OnInit {
       const url = this.coverSelection.url.trim();
       if (!url) {
         this.formErrors['cover'] = 'Pega la URL de la portada o sube un archivo.';
-      } else {
-        try {
-          const parsed = new URL(url);
-          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error();
-        } catch {
-          this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
-        }
+      } else if (!this.isValidHttpUrl(url)) {
+        this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
       }
     }
 
     const year = Number(this.newMovie.year);
     if (!year || year < 1900 || year > this.maxYear) {
       this.formErrors['year'] = `El año debe estar entre 1900 y ${this.maxYear}`;
+    }
+
+    if (!this.reelSelection.valid) {
+      this.formErrors['reel'] = 'Revisa los campos del reel de tráilers.';
     }
 
     return Object.keys(this.formErrors).length === 0;
@@ -132,7 +160,12 @@ export class MoviesComponent implements OnInit {
       synopsis: this.newMovie.synopsis.trim(),
       year: Number(this.newMovie.year),
       cover: this.coverSelection.mode === 'url' ? this.coverSelection.url.trim() : undefined,
-      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null
+      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null,
+
+      trailer_key: this.reelSelection.trailer_key,
+      backdrop_url: this.reelSelection.backdrop_url,
+      is_featured: this.reelSelection.is_featured,
+      featured_order: this.reelSelection.is_featured ? this.reelSelection.featured_order : null
     };
 
     this.movieService.createMovie(payload).subscribe({
@@ -154,5 +187,14 @@ export class MoviesComponent implements OnInit {
         console.error('Error:', err);
       }
     });
+  }
+
+  private isValidHttpUrl(value: string): boolean {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 }

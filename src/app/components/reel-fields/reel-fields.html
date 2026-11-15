@@ -1,0 +1,125 @@
+<div class="reel-fields">
+  <div class="reel-header">
+    <span class="reel-title">
+      <i class="bi bi-film"></i> Reel de tráilers
+    </span>
+    <span class="reel-badge">Opcional</span>
+  </div>
+
+  <!-- Tráiler de YouTube -->
+  <div class="form-group-custom">
+    <label class="form-label-custom">
+      <i class="bi bi-youtube"></i> Tráiler de YouTube
+    </label>
+
+    <div class="input-row">
+      <input
+        type="text"
+        class="form-control-custom"
+        [class.is-invalid]="trailerError"
+        [ngModel]="trailerInput"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="onTrailerChange($event)"
+        placeholder="Pega el enlace de YouTube o el ID del video"
+        autocomplete="off"
+      >
+      <button *ngIf="trailerInput" type="button" class="clear-btn" (click)="clearTrailer()" title="Limpiar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div *ngIf="trailerError" class="invalid-feedback-custom">
+      {{ trailerError }}
+    </div>
+
+    <div *ngIf="trailerKey && !trailerError" class="trailer-preview">
+      <img
+        [src]="'https://img.youtube.com/vi/' + trailerKey + '/hqdefault.jpg'"
+        alt="Miniatura del tráiler"
+      >
+      <span class="preview-tag">
+        <i class="bi bi-youtube"></i> Tráiler listo
+      </span>
+    </div>
+  </div>
+
+  <!-- Backdrop horizontal -->
+  <div class="form-group-custom">
+    <label class="form-label-custom">
+      <i class="bi bi-image"></i> Backdrop horizontal
+    </label>
+
+    <div class="input-row">
+      <input
+        type="url"
+        class="form-control-custom"
+        [class.is-invalid]="backdropError"
+        [ngModel]="backdropUrl"
+        [ngModelOptions]="{ standalone: true }"
+        (ngModelChange)="onBackdropChange($event)"
+        placeholder="https://ejemplo.com/backdrop.jpg"
+        autocomplete="off"
+      >
+      <button *ngIf="backdropUrl" type="button" class="clear-btn" (click)="clearBackdrop()" title="Limpiar">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div *ngIf="backdropError" class="invalid-feedback-custom">
+      {{ backdropError }}
+    </div>
+
+    <div *ngIf="backdropPreview" class="backdrop-preview">
+      <img
+        *ngIf="!backdropBroken"
+        [src]="backdropPreview"
+        alt="Vista previa del backdrop"
+        (error)="backdropBroken = true"
+      >
+      <div *ngIf="backdropBroken" class="preview-fallback">
+        <i class="bi bi-image-alt"></i>
+        <span>No se pudo cargar la imagen</span>
+      </div>
+    </div>
+
+    <p class="field-hint">
+      Imagen horizontal 16:9 para el escenario del reel. Si no la agregas, se usará la portada con un efecto cinematográfico.
+    </p>
+  </div>
+
+  <!-- Destacada -->
+  <label class="featured-toggle">
+    <input
+      type="checkbox"
+      [ngModel]="featured"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="onFeaturedChange($event)"
+    >
+    <span>
+      <strong>Mostrar en el reel de Destacados</strong>
+      <small>Máximo 5 películas. Deben tener tráiler y posición única.</small>
+    </span>
+  </label>
+
+  <div *ngIf="featured" class="form-group-custom">
+    <label class="form-label-custom">
+      <i class="bi bi-sort-numeric-down"></i> Posición en el reel
+    </label>
+
+    <select
+      class="form-control-custom"
+      [ngModel]="order"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="onOrderChange($event)"
+    >
+      <option [ngValue]="null" disabled>Selecciona una posición</option>
+      <option *ngFor="let pos of positions" [ngValue]="pos">
+        Posición {{ pos }}
+      </option>
+    </select>
+
+    <div *ngIf="featuredError" class="invalid-feedback-custom">
+      {{ featuredError }}
+    </div>
+  </div>
+</div>

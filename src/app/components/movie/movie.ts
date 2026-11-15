@@ -5,13 +5,22 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../header/header';
 import { FooterComponent } from '../footer/footer';
 import { CoverInputComponent, CoverSelection } from '../cover-input/cover-input';
+import { ReelFieldsComponent, ReelSelection } from '../reel-fields/reel-fields';
 import { MovieService, MoviePayload } from '../../services/movie';
 import { Movie } from '../../models/movie.model';
 
 @Component({
   selector: 'app-movie',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, FooterComponent, CoverInputComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    HeaderComponent,
+    FooterComponent,
+    CoverInputComponent,
+    ReelFieldsComponent
+  ],
   templateUrl: './movie.html',
   styleUrl: './movie.css'
 })
@@ -29,6 +38,14 @@ export class MovieComponent implements OnInit {
   showEditModal = false;
   editMovieData = { title: '', synopsis: '', cover: '', year: 0 };
   coverSelection: CoverSelection = { mode: 'url', url: '', file: null };
+  reelSelection: ReelSelection = {
+    trailer_key: null,
+    backdrop_url: null,
+    is_featured: false,
+    featured_order: null,
+    valid: true
+  };
+
   saving = false;
   saveError = '';
   formErrors: { [key: string]: string } = {};
@@ -71,15 +88,30 @@ export class MovieComponent implements OnInit {
     delete this.formErrors['cover'];
   }
 
+  onReelChange(selection: ReelSelection): void {
+    this.reelSelection = selection;
+    delete this.formErrors['reel'];
+  }
+
   openEditModal(): void {
     if (!this.movie) return;
+
     this.editMovieData = {
       title: this.movie.title,
       synopsis: this.movie.synopsis,
       cover: this.movie.cover,
       year: this.movie.year
     };
+
     this.coverSelection = { mode: 'url', url: this.movie.cover, file: null };
+    this.reelSelection = {
+      trailer_key: this.movie.trailer_key,
+      backdrop_url: this.movie.backdrop_url,
+      is_featured: this.movie.is_featured,
+      featured_order: this.movie.featured_order,
+      valid: true
+    };
+
     this.formErrors = {};
     this.saveError = '';
     this.showEditModal = true;
@@ -115,19 +147,18 @@ export class MovieComponent implements OnInit {
       const url = this.coverSelection.url.trim();
       if (!url) {
         this.formErrors['cover'] = 'Pega la URL de la portada o sube un archivo.';
-      } else {
-        try {
-          const parsed = new URL(url);
-          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error();
-        } catch {
-          this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
-        }
+      } else if (!this.isValidHttpUrl(url)) {
+        this.formErrors['cover'] = 'Debe ser una URL válida (https://...)';
       }
     }
 
     const year = Number(this.editMovieData.year);
     if (!year || year < 1900 || year > this.maxYear) {
       this.formErrors['year'] = `El año debe estar entre 1900 y ${this.maxYear}`;
+    }
+
+    if (!this.reelSelection.valid) {
+      this.formErrors['reel'] = 'Revisa los campos del reel de tráilers.';
     }
 
     return Object.keys(this.formErrors).length === 0;
@@ -147,7 +178,12 @@ export class MovieComponent implements OnInit {
       synopsis: this.editMovieData.synopsis.trim(),
       year: Number(this.editMovieData.year),
       cover: this.coverSelection.mode === 'url' ? this.coverSelection.url.trim() : undefined,
-      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null
+      coverFile: this.coverSelection.mode === 'file' ? this.coverSelection.file : null,
+
+      trailer_key: this.reelSelection.trailer_key,
+      backdrop_url: this.reelSelection.backdrop_url,
+      is_featured: this.reelSelection.is_featured,
+      featured_order: this.reelSelection.is_featured ? this.reelSelection.featured_order : null
     };
 
     this.movieService.updateMovie(this.movie.id, payload).subscribe({
@@ -184,6 +220,7 @@ export class MovieComponent implements OnInit {
 
   confirmDelete(): void {
     if (!this.movie) return;
+
     this.deleting = true;
     this.movieService.deleteMovie(this.movie.id).subscribe({
       next: () => {
@@ -204,5 +241,14 @@ export class MovieComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/movies']);
+  }
+
+  private isValidHttpUrl(value: string): boolean {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 }

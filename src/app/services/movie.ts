@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Movie } from '../models/movie.model';
+import { UpcomingMovie, UpcomingResponse, UpcomingTrailer } from '../models/upcoming.model';
 import { environment } from '../../environments/environment';
 
 export interface MoviePayload {
@@ -10,6 +11,12 @@ export interface MoviePayload {
   year: number;
   cover?: string;
   coverFile?: File | null;
+
+  trailer_key?: string | null;
+  backdrop_url?: string | null;
+  is_featured?: boolean;
+  featured_order?: number | null;
+  tmdb_id?: number | null;
 }
 
 @Injectable({
@@ -31,6 +38,33 @@ export class MovieService {
       .pipe(map(response => response.data));
   }
 
+  getFeaturedTrailers(): Observable<Movie[]> {
+    return this.http.get<{ success: boolean; data: Movie[] }>(`${this.apiUrl}/trailers/featured`)
+      .pipe(map(response => response.data));
+  }
+
+  /**
+   * Próximos estrenos desde TMDB (sin tráiler).
+   * Devuelve la lista y la atribución.
+   */
+  getUpcoming(): Observable<{ movies: UpcomingMovie[]; attribution: string }> {
+    return this.http.get<UpcomingResponse>(`${this.apiUrl}/trailers/upcoming`)
+      .pipe(map(response => ({
+        movies: response.data ?? [],
+        attribution: response.meta?.attribution ?? ''
+      })));
+  }
+
+  /**
+   * Resuelve el tráiler de un estreno bajo demanda.
+   * Devuelve null si la película aún no tiene tráiler.
+   */
+  resolveUpcomingTrailer(tmdbId: number): Observable<UpcomingTrailer | null> {
+    return this.http.get<{ success: boolean; data: UpcomingTrailer | null }>(
+      `${this.apiUrl}/trailers/upcoming/${tmdbId}/video`
+    ).pipe(map(response => response.data ?? null));
+  }
+
   createMovie(payload: MoviePayload): Observable<Movie> {
     return this.http.post<{ success: boolean; data: Movie }>(`${this.apiUrl}/movies`, this.buildBody(payload))
       .pipe(map(response => response.data));
@@ -46,10 +80,6 @@ export class MovieService {
       .pipe(map(() => {}));
   }
 
-  /**
-   * Si hay archivo, envía multipart/form-data (cover_file).
-   * Si no, envía JSON con la URL (cover).
-   */
   private buildBody(payload: MoviePayload): FormData | object {
     if (payload.coverFile) {
       const formData = new FormData();
@@ -57,6 +87,16 @@ export class MovieService {
       formData.append('synopsis', payload.synopsis);
       formData.append('year', String(payload.year));
       formData.append('cover_file', payload.coverFile, payload.coverFile.name);
+
+      formData.append('trailer_key', payload.trailer_key ?? '');
+      formData.append('backdrop_url', payload.backdrop_url ?? '');
+      formData.append('is_featured', payload.is_featured ? '1' : '0');
+      formData.append('featured_order', payload.featured_order != null ? String(payload.featured_order) : '');
+
+      if (payload.tmdb_id != null) {
+        formData.append('tmdb_id', String(payload.tmdb_id));
+      }
+
       return formData;
     }
 
@@ -64,7 +104,12 @@ export class MovieService {
       title: payload.title,
       synopsis: payload.synopsis,
       year: payload.year,
-      cover: payload.cover ?? ''
+      cover: payload.cover ?? '',
+      trailer_key: payload.trailer_key ?? null,
+      backdrop_url: payload.backdrop_url ?? null,
+      is_featured: payload.is_featured ?? false,
+      featured_order: payload.featured_order ?? null,
+      tmdb_id: payload.tmdb_id ?? null
     };
   }
 }

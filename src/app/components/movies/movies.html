@@ -182,6 +182,24 @@
                 {{ formErrors['synopsis'] }}
               </div>
             </div>
+
+              <!-- Reel de tráilers -->
+              <app-reel-fields
+                *ngIf="showAddModal"
+                [initialTrailerKey]="null"
+                [initialBackdropUrl]="null"
+                [initialFeatured]="false"
+                [initialOrder]="null"
+                (selectionChange)="onReelChange($event)">
+              </app-reel-fields>
+
+              <div *ngIf="formErrors['reel']" class="invalid-feedback-custom">
+                {{ formErrors['reel'] }}
+              </div>
+
+
+
+
           </form>
         </div>
 

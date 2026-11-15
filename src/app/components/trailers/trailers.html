@@ -1,0 +1,438 @@
+<div class="trailers-page">
+  <div class="page-scrim"></div>
+  <div class="page-grain"></div>
+
+  <app-header></app-header>
+
+  <main class="trailers-main">
+    <div class="container">
+
+      <!-- Encabezado de página -->
+      <div class="reel-intro">
+        <span class="eyebrow"><i class="bi bi-camera-reels"></i> Sala de proyección</span>
+        <h2 class="reel-heading">Tráilers</h2>
+        <p class="reel-lead">
+          Explora los destacados de nuestro catálogo y los estrenos que vienen en camino.
+        </p>
+      </div>
+
+      <!-- Navegación entre salas -->
+      <nav class="section-nav" aria-label="Secciones de tráilers">
+        <button
+          type="button"
+          *ngFor="let section of sectionNav"
+          class="section-nav-btn"
+          [class.active]="activeSection === section.id"
+          (click)="scrollToSection(section.id)">
+          <i [class]="section.icon"></i> {{ section.label }}
+        </button>
+      </nav>
+
+      <!-- ============================================
+           SECCIÓN DESTACADOS
+           ============================================ -->
+      <div id="destacados" class="section-anchor">
+
+      <div *ngIf="loading" class="reel-skeleton" aria-live="polite" aria-busy="true">
+        <div class="section-head">
+          <span class="section-eyebrow"><i class="bi bi-star-fill"></i> Destacados</span>
+        </div>
+        <div class="sk-topbar">
+          <div class="sk-segments"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="sk-counter"></div>
+        </div>
+        <div class="sk-stage shimmer"></div>
+        <div class="sk-rail">
+          <div class="sk-thumb shimmer" *ngFor="let i of [1,2,3,4,5]"></div>
+        </div>
+        <p class="sk-label">Preparando el proyector…</p>
+      </div>
+
+      <div *ngIf="errorMessage" class="state-card state-error" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <h3>No se pudo cargar el reel de destacados</h3>
+        <p>{{ errorMessage }}</p>
+        <button type="button" class="btn-gold" (click)="loadReel()">
+          <i class="bi bi-arrow-clockwise"></i> Reintentar
+        </button>
+      </div>
+
+      <div *ngIf="isEmpty" class="state-card state-empty">
+        <i class="bi bi-film"></i>
+        <h3>Aún no hay películas destacadas</h3>
+        <p>
+          Marca hasta 5 películas del catálogo como destacadas y asígnales un tráiler
+          para que aparezcan en esta sala.
+        </p>
+        <a routerLink="/movies" class="btn-gold">
+          <i class="bi bi-collection-play"></i> Ir al catálogo
+        </a>
+      </div>
+
+      <section *ngIf="hasReel && activeMovie as movie" class="reel section-block" aria-roledescription="carrusel" aria-label="Tráilers destacados">
+
+        <div class="section-head">
+          <span class="section-eyebrow"><i class="bi bi-star-fill"></i> Destacados</span>
+        </div>
+
+        <div
+          class="reel-ambient"
+          [class.ambient-blur]="stageIsAmbient"
+          [style.background-image]="noImage ? 'none' : 'url(' + stageImage + ')'"
+          aria-hidden="true">
+        </div>
+
+        <div class="reel-topbar">
+          <div class="segments" role="tablist" aria-label="Posición en el reel">
+            <button
+              *ngFor="let item of movies; let i = index; trackBy: trackById"
+              type="button"
+              class="segment"
+              [class.past]="segmentState(i) === 'past'"
+              [class.active]="segmentState(i) === 'active'"
+              role="tab"
+              [attr.aria-selected]="i === activeIndex"
+              [attr.aria-label]="'Ir a ' + item.title + ', posición ' + (i + 1)"
+              (click)="select(i)">
+              <span class="segment-fill"></span>
+            </button>
+          </div>
+          <span class="counter">
+            <strong>{{ counterCurrent }}</strong>
+            <span class="counter-sep">/</span>
+            <span>{{ counterTotal }}</span>
+          </span>
+        </div>
+
+        <div class="stage" [class.is-playing]="playing">
+
+          <!-- El escenario solo monta su iframe si no hay otro iframe activo -->
+          <iframe
+            *ngIf="playing && embedUrl && !upcomingModalOpen; else posterStage"
+            class="stage-frame"
+            [src]="embedUrl"
+            [title]="'Tráiler de ' + movie.title"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen>
+          </iframe>
+
+          <ng-template #posterStage>
+            <img
+              *ngIf="!noImage"
+              class="stage-image"
+              [class.is-ambient]="stageIsAmbient"
+              [src]="stageImage"
+              [alt]="'Imagen de ' + movie.title"
+              (error)="onBackdropError()">
+
+            <div *ngIf="noImage" class="stage-noimage">
+              <i class="bi bi-camera-reels"></i>
+            </div>
+
+            <div class="stage-vignette" aria-hidden="true"></div>
+            <div class="stage-grain" aria-hidden="true"></div>
+            <div class="letterbox top" aria-hidden="true"></div>
+            <div class="letterbox bottom" aria-hidden="true"></div>
+
+            <button
+              *ngIf="movies.length > 1"
+              type="button"
+              class="edge edge-prev"
+              (click)="prev()"
+              aria-label="Película anterior">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button
+              *ngIf="movies.length > 1"
+              type="button"
+              class="edge edge-next"
+              (click)="next()"
+              aria-label="Película siguiente">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+
+            <button type="button" class="play" (click)="play()" [attr.aria-label]="'Reproducir tráiler de ' + movie.title">
+              <span class="play-ring" aria-hidden="true"></span>
+              <i class="bi bi-play-fill"></i>
+            </button>
+
+            <div class="stage-info">
+              <img
+                *ngIf="showPosterCard"
+                class="poster-card"
+                [src]="movie.cover"
+                [alt]="'Póster de ' + movie.title"
+                (error)="onPosterError()">
+
+              <div class="stage-text">
+                <div class="stage-tags">
+                  <span class="chip chip-gold"><i class="bi bi-star-fill"></i> Destacada</span>
+                  <span class="chip chip-ghost">{{ movie.year }}</span>
+                </div>
+
+                <h3 class="stage-title">{{ movie.title }}</h3>
+                <p class="stage-synopsis">{{ movie.synopsis }}</p>
+
+                <span class="play-hint">
+                  <i class="bi bi-play-circle"></i> Pulsa Play para reproducir el tráiler
+                </span>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="reel-actions">
+          <div class="nav-group">
+            <button type="button" class="btn-ghost btn-icon" (click)="prev()" [disabled]="movies.length < 2" aria-label="Anterior">
+              <i class="bi bi-skip-start-fill"></i>
+            </button>
+            <button type="button" class="btn-ghost btn-icon" (click)="next()" [disabled]="movies.length < 2" aria-label="Siguiente">
+              <i class="bi bi-skip-end-fill"></i>
+            </button>
+
+            <button *ngIf="playing" type="button" class="btn-ghost btn-stop" (click)="stop()">
+              <i class="bi bi-stop-fill"></i> Detener
+            </button>
+
+            <span *ngIf="playing" class="now-playing">
+              <span class="pulse-dot" aria-hidden="true"></span>
+              Reproduciendo
+            </span>
+          </div>
+
+          <div class="link-group">
+            <a class="btn-ghost" [routerLink]="['/movies', movie.id]">
+              <i class="bi bi-info-circle"></i> Ver detalle
+            </a>
+            <a
+              class="btn-gold"
+              [href]="movie.trailer_url"
+              target="_blank"
+              rel="noopener noreferrer">
+              <i class="bi bi-youtube"></i> Ver en YouTube
+            </a>
+          </div>
+        </div>
+
+        <div class="rail-wrap">
+          <span class="rail-label"><i class="bi bi-collection-play"></i> En el reel</span>
+
+          <div class="rail" role="tablist" aria-label="Películas del reel">
+            <button
+              #thumbBtn
+              *ngFor="let item of movies; let i = index; trackBy: trackById"
+              type="button"
+              class="thumb"
+              [class.active]="i === activeIndex"
+              role="tab"
+              [attr.aria-selected]="i === activeIndex"
+              (click)="select(i)">
+
+              <span class="thumb-media">
+                <img
+                  [src]="thumbSrc(item)"
+                  alt=""
+                  loading="lazy"
+                  (error)="onThumbError(item)">
+                <span class="thumb-shade" aria-hidden="true"></span>
+                <span class="thumb-play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+                <span class="thumb-index">{{ i + 1 }}</span>
+              </span>
+
+              <span class="thumb-title">{{ item.title }}</span>
+              <span class="thumb-year">{{ item.year }}</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="reel-footnote">
+          <i class="bi bi-keyboard"></i>
+          Usa las flechas del teclado para cambiar de película y <kbd>Esc</kbd> para detener la reproducción.
+        </p>
+      </section>
+            </div>
+
+      <div class="sections-divider" aria-hidden="true">
+        <span class="divider-line"></span>
+        <i class="bi bi-film"></i>
+        <span class="divider-line"></span>
+      </div>
+
+      <!-- ============================================
+           SECCIÓN PRÓXIMAMENTE
+           ============================================ -->
+        <section id="proximamente" class="upcoming section-block" aria-labelledby="upcoming-title">
+
+        <div class="section-head">
+          <span class="section-eyebrow"><i class="bi bi-hourglass-split"></i> Próximamente</span>
+        </div>
+
+        <div *ngIf="upcomingLoading" class="up-skeleton" aria-live="polite" aria-busy="true">
+          <div class="sk-up-rail">
+            <div class="sk-up-card shimmer" *ngFor="let i of [1,2,3,4]"></div>
+          </div>
+          <p class="sk-label">Consultando la cartelera…</p>
+        </div>
+
+        <div *ngIf="upcomingError" class="state-card state-error" role="alert">
+          <i class="bi bi-cloud-slash"></i>
+          <h3>No se pudieron cargar los estrenos</h3>
+          <p>{{ upcomingError }} Esto no afecta al reel de destacados.</p>
+          <button type="button" class="btn-gold" (click)="loadUpcoming()">
+            <i class="bi bi-arrow-clockwise"></i> Reintentar
+          </button>
+        </div>
+
+        <div *ngIf="upcomingEmpty" class="state-card state-empty">
+          <i class="bi bi-calendar-x"></i>
+          <h3>Sin estrenos por mostrar</h3>
+          <p>No encontramos próximos estrenos con tráiler en este momento. Vuelve más tarde.</p>
+        </div>
+
+        <ng-container *ngIf="hasUpcoming">
+          <div class="up-rail">
+            <button
+              type="button"
+              class="up-card"
+              *ngFor="let item of upcomingMovies; trackBy: trackByTmdbId"
+              [class.resolving]="resolvingTmdbId === item.tmdb_id"
+              (click)="openUpcomingModal(item)"
+              [attr.aria-label]="'Ver tráiler de ' + item.title">
+
+              <span class="up-media">
+                <img
+                  *ngIf="hasUpcomingImage(item)"
+                  [src]="upcomingImageSrc(item)!"
+                  alt=""
+                  loading="lazy"
+                  (error)="onUpcomingImageError(item)">
+
+                <span *ngIf="!hasUpcomingImage(item)" class="up-noimage" aria-hidden="true">
+                  <i class="bi bi-film"></i>
+                </span>
+
+                <span class="up-shade" aria-hidden="true"></span>
+                <span class="up-countdown" [ngClass]="releaseLabelClass(item)">
+                  <i class="bi bi-calendar-event"></i> {{ releaseLabel(item) }}
+                </span>
+                <span class="up-play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+
+                <span *ngIf="resolvingTmdbId === item.tmdb_id" class="up-resolving" aria-hidden="true">
+                  <span class="spinner-circle"></span>
+                </span>
+              </span>
+
+              <span class="up-body">
+                <span class="up-title">{{ item.title }}</span>
+                <span class="up-meta">
+                  <span *ngIf="showRating(item)" class="up-rating">
+                    <i class="bi bi-star-fill"></i> {{ item.vote_average }}
+                  </span>
+                  <span class="up-date">{{ releaseDateLong(item.release_date) }}</span>
+                </span>
+                <span class="up-genres" *ngIf="item.genres.length">
+                  <span class="up-genre" *ngFor="let genre of item.genres">{{ genre }}</span>
+                </span>
+                <span class="up-cta"><i class="bi bi-play-circle"></i> Ver tráiler</span>
+              </span>
+            </button>
+          </div>
+
+          <p *ngIf="upcomingAttribution" class="tmdb-attribution">
+            <i class="bi bi-info-circle"></i> {{ upcomingAttribution }}
+          </p>
+        </ng-container>
+      </section>
+    </div>
+  </main>
+
+  <app-footer></app-footer>
+
+  <!-- ============================================
+       MODAL PRÓXIMAMENTE
+       ============================================ -->
+  <div
+    *ngIf="upcomingModalOpen && modalMovie as modal"
+    class="up-modal"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Tráiler de ' + modal.title"
+    (click)="closeUpcomingModal()">
+
+    <div class="up-modal-dialog" (click)="$event.stopPropagation()">
+
+      <div class="up-modal-header">
+        <div class="up-modal-title">
+          <span class="chip chip-gold"><i class="bi bi-hourglass-split"></i> Próximamente</span>
+          <h3>{{ modal.title }}</h3>
+          <span class="up-modal-sub">{{ releaseLabel(modal) }} · {{ releaseDateLong(modal.release_date) }}</span>
+        </div>
+        <button type="button" class="up-modal-close" (click)="closeUpcomingModal()" aria-label="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="up-modal-body">
+
+        <!-- Resolviendo -->
+        <div *ngIf="modalLoading" class="up-modal-state">
+          <span class="spinner-circle big" aria-hidden="true"></span>
+          <p>Buscando el tráiler…</p>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="modalError" class="up-modal-state">
+          <i class="bi bi-exclamation-triangle up-state-icon danger"></i>
+          <p>{{ modalError }}</p>
+          <button type="button" class="btn-gold" (click)="retryModalTrailer()">
+            <i class="bi bi-arrow-clockwise"></i> Reintentar
+          </button>
+        </div>
+
+        <!-- Con tráiler -->
+        <ng-container *ngIf="!modalLoading && !modalError && modalTrailer as trailer">
+          <div class="up-player">
+            <iframe
+              [src]="modalEmbedUrl"
+              [title]="'Tráiler de ' + modal.title"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen>
+            </iframe>
+          </div>
+
+          <div class="up-modal-info">
+            <div class="up-trailer-meta">
+              <span class="chip chip-ghost"><i class="bi bi-camera-video"></i> {{ trailer.trailer_type }}</span>
+              <span class="chip chip-ghost"><i class="bi bi-translate"></i> {{ languageLabel(trailer.trailer_language) }}</span>
+              <span *ngIf="trailer.trailer_official" class="chip chip-gold">
+                <i class="bi bi-patch-check-fill"></i> Oficial
+              </span>
+            </div>
+            <a
+              class="btn-gold up-yt"
+              [href]="trailer.trailer_url"
+              target="_blank"
+              rel="noopener noreferrer">
+              <i class="bi bi-youtube"></i> Ver en YouTube
+            </a>
+          </div>
+        </ng-container>
+
+        <!-- Sin tráiler -->
+        <div *ngIf="!modalLoading && !modalError && !modalTrailer" class="up-modal-state">
+          <i class="bi bi-clock-history up-state-icon"></i>
+          <h4>Todavía no hay tráiler</h4>
+          <p>
+            Esta película aún no tiene un tráiler disponible. Vuelve más tarde o
+            revisa su ficha en TMDB.
+          </p>
+          <button type="button" class="btn-ghost" (click)="closeUpcomingModal()">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

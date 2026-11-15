@@ -172,6 +172,24 @@
                 {{ formErrors['synopsis'] }}
               </div>
             </div>
+              <!-- Reel de tráilers -->
+              <app-reel-fields
+                *ngIf="showEditModal"
+                [initialTrailerKey]="movie?.trailer_key ?? null"
+                [initialBackdropUrl]="movie?.backdrop_url ?? null"
+                [initialFeatured]="movie?.is_featured ?? false"
+                [initialOrder]="movie?.featured_order ?? null"
+                (selectionChange)="onReelChange($event)">
+              </app-reel-fields>
+
+              <div *ngIf="formErrors['reel']" class="invalid-feedback-custom">
+                {{ formErrors['reel'] }}
+              </div>
+
+
+
+
+
           </form>
         </div>
 
