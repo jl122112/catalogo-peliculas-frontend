@@ -32,7 +32,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-image: url('/assets/background.jpg');
+  background-image: url('/assets/fondo.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
